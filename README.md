@@ -73,7 +73,7 @@ uses a local identity (`dev-pioneer`) to preview the quest UI — it is
 | `/api/progress` | POST | Toggle a quest step `{uid, questId, stepIndex, done}` |
 | `/api/checkin` | POST | Daily check-in `{uid}` |
 | `/api/auth/register` | POST | Store Pioneer identity from Pi Auth `{uid, username}` |
-| `/api/auth/verify` | POST | Verify an access token via Pi Platform API `/v2/me` (needs `PI_API_KEY`) |
+| `/api/auth/verify` | POST | Verify an access token via Pi Platform API `/v2/me` with `Authorization: Bearer <accessToken>` (per official Pi docs — needs no `PI_API_KEY`) |
 | `/api/leaderboard` | GET | Top 10 by XP |
 | `/api/payments/approve` | POST | Server-side payment approval `{paymentId, uid, amount, memo}` |
 | `/api/payments/complete` | POST | Server-side payment completion `{paymentId, txid, uid}` |

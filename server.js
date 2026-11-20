@@ -13,9 +13,13 @@
  *   and calls Pi.init({ version: "2.0", sandbox: true }) in development.
  * - Pi.authenticate(['username', 'payments'], onIncompletePaymentFound)
  *   returns { accessToken, user: { uid, username } }. The client user object
- *   is presentation-only; the backend is the source of truth and must verify
- *   the access token against the Pi Platform API (/me) with the server-side
- *   PI_API_KEY. That key is NEVER in the frontend.
+ *   is presentation-only; the backend is the source of truth and verifies
+ *   the access token against the Pi Platform API (GET /v2/me) with
+ *   `Authorization: Bearer <accessToken>` — per the official Pi Developer
+ *   Guide, /v2/me takes the Pioneer's access token, NOT the Server API Key.
+ *   The Server API Key (Authorization: Key <key>) is only for server-side
+ *   payment calls (/v2/payments/:id/approve|complete). That key is NEVER in
+ *   the frontend.
  * - Pi.createPayment({ amount, memo, metadata }, callbacks) drives the
  *   three-phase flow: create -> server approve -> server complete.
  *   Server endpoints below implement approve/complete. In sandbox mode
@@ -259,25 +263,30 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { ok: true, uid: user.uid, username: user.username });
   }
 
-  // POST /api/auth/verify { accessToken } — backend source of truth.
-  // With a real PI_API_KEY this calls GET https://api.minepi.com/v2/me
-  // with `Authorization: Key <PI_API_KEY>` and the user access token.
-  // Without a key (dev), it honestly reports that it cannot verify.
+  // POST /api/auth/verify { accessToken, uid? } — backend source of truth.
+  // Per the official Pi Developer Guide (Pi App Platform APIs), /v2/me is
+  // authorized with the PIONEER'S access token, NOT with the Server API Key:
+  //   GET https://api.minepi.com/v2/me
+  //   Authorization: Bearer <Pioneer's access token>
+  // The Server API Key (Authorization: Key <key>) is only for server-side
+  // payment calls (/v2/payments/...). The old code sent Key <PI_API_KEY>
+  // to /v2/me, which Pi rejects (401) — fixed 2026-11-21.
+  // This endpoint needs NO PI_API_KEY; it needs the accessToken that
+  // Pi.authenticate() returned in Pi Browser.
   if (req.method === "POST" && url.pathname === "/api/auth/verify") {
     const body = await readJsonBody(req);
     if (!body.accessToken) return sendJson(res, 400, { error: "accessToken is required" });
-    if (!PI_API_KEY) {
-      return sendJson(res, 200, {
-        verified: false,
-        reason: "PI_API_KEY is not configured. Set it server-side only (never in the frontend) to verify access tokens against the Pi Platform API (/v2/me).",
-      });
-    }
     try {
       const r = await fetch("https://api.minepi.com/v2/me", {
-        headers: { Authorization: `Key ${PI_API_KEY}` },
+        headers: { Authorization: `Bearer ${body.accessToken}` },
+        signal: AbortSignal.timeout(10000),
       });
-      const me = await r.json();
-      return sendJson(res, 200, { verified: r.ok, me: r.ok ? me : undefined, error: r.ok ? undefined : me });
+      const me = await r.json().catch(() => ({}));
+      if (!r.ok) return sendJson(res, 200, { verified: false, error: me });
+      if (body.uid && me.uid && me.uid !== body.uid) {
+        return sendJson(res, 200, { verified: false, reason: "Access token belongs to a different Pioneer uid than the one sent by the client." });
+      }
+      return sendJson(res, 200, { verified: true, me: { uid: me.uid, username: me.username } });
     } catch (e) {
       return sendJson(res, 502, { verified: false, error: String(e) });
     }
@@ -314,6 +323,7 @@ async function handleApi(req, res) {
         const r = await fetch(`https://api.minepi.com/v2/payments/${paymentId}/approve`, {
           method: "POST",
           headers: { Authorization: `Key ${PI_API_KEY}` },
+          signal: AbortSignal.timeout(10000),
         });
         if (!r.ok) {
           saveDb(db);
@@ -342,6 +352,7 @@ async function handleApi(req, res) {
           method: "POST",
           headers: { Authorization: `Key ${PI_API_KEY}`, "Content-Type": "application/json" },
           body: JSON.stringify({ txid }),
+          signal: AbortSignal.timeout(10000),
         });
         if (!r.ok) {
           saveDb(db);
