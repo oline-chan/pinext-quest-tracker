@@ -1,0 +1,30 @@
+# Render Blueprint — Quest Tracker (Pi Next)
+# Deploy: push this file to the repo, then in the Render dashboard
+# (dashboard.render.com) do New > Blueprint and pick this repo, or
+# New > Web Service and point it at this repo manually with the same
+# settings. See docs/DEPLOY.md for the full steps.
+#
+# Free tier, no credit card: 750 instance hours/month, 512 MB RAM.
+# The service sleeps after 15 minutes of inactivity and takes ~1 minute
+# to wake on the next request. That is fine for the hackathon demo and
+# for Pi's Staging deploy verification, but it is not production hosting.
+services:
+  - type: web
+    name: pinext-quest-tracker
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Staging (Testnet). Keep "true" until the app is switched to
+      # Production in the Pi Web Console; then set "false" here AND in
+      # the console, with Gondal's approval.
+      - key: PI_SANDBOX
+        value: "true"
+      # Set in the Render dashboard (Environment), NEVER in this file.
+      # The value is the Pi Server API Key from the Web Console
+      # (app > Settings > Add-ons > API key). See docs/PI_API_KEY.md.
+      - key: PI_API_KEY
+        sync: false
