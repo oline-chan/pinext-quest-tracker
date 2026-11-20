@@ -1,0 +1,201 @@
+=== PI NEXT — Quest Tracker demo run ===
+Date: 2026-11-20 16:48:35 UTC / 2026-11-20 23:48:35 WIB
+Node: v24.22.1 | PORT=3000 | PI_SANDBOX=true (default) | PI_API_KEY unset
+Repo: ~/workspace/hackathons/pinext-quest-tracker
+Test user: demo-pioneer-20261120 / demo-pioneer (test data only, deleted after run)
+
+--- 0. Start server (node server.js, stdlib only, no npm install) ---
+server PID 3465
+Quest Tracker running at http://localhost:3000
+Pi sandbox mode: ON (no real Pi moves)
+Pi API key configured: no (auth verify + payment approval/completion run in sandbox-simulated mode)
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/health
+{"ok":true,"app":"pinext-quest-tracker","piSandbox":true,"piApiKeyConfigured":false,"quests":6,"users":0,"payments":0}
+HTTP 200
+
+$ curl -s http://localhost:3000/api/quests | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"quests={len(d[chr(39)+chr(39) if False else chr(113)+chr(117)+chr(101)+chr(115)+chr(116)+chr(115)]})\" )" 2>&1 || curl -s http://localhost:3000/api/quests
+  File "<string>", line 1
+    import json,sys; d=json.load(sys.stdin); print(f"quests={len(d[chr(39)+chr(39) if False else chr(113)+chr(117)+chr(101)+chr(115)+chr(116)+chr(115)]})" )
+                                                                                                                                                       ^
+SyntaxError: closing parenthesis '}' does not match opening parenthesis '('
+{"quests":[{"category":"Onboarding","description":"Sign in with Pi and set up your Quest Tracker profile.","id":"welcome-pioneer","premium":false,"steps":["Sign in with Pi Authentication","View your Pioneer profile","Complete your first daily check-in"],"title":"Welcome, Pioneer","xp":50},{"category":"Daily","description":"Come back every day. Streaks are what the Community Engagement Awards reward: real engagement and retention.","id":"daily-checkin","premium":false,"steps":["Check in today","Check in 3 days in a row","Check in 7 days in a row"],"title":"Daily Check-in Streak","xp":20},{"category":"Community","description":"Share Quest Tracker with another Pioneer and help the community grow.","id":"invite-a-pioneer","premium":false,"steps":["Open the share dialog","Send an invite to a friend","Your friend completes their first quest"],"title":"Invite a Pioneer","xp":100},{"category":"Payments","description":"Try the Pi payment flow in sandbox mode. No real Pi moves — this is a test payment only.","id":"learn-pi-payments","premium":false,"steps":["Open the Premium Quest Pack payment","Review the sandbox payment","Confirm the payment completes on the server"],"title":"Learn Pi Payments (Sandbox)","xp":80},{"category":"Premium","description":"Premium quest pack unlocked with a Pi payment. Harder quests, bigger XP, and a leaderboard badge.","id":"premium-explorer","premium":true,"steps":["Unlock the Premium Quest Pack (1 Pi, sandbox)","Complete a premium quest","Reach the top 10 of the leaderboard"],"title":"Premium Explorer Pack","xp":200},{"category":"Community","description":"Help other Pioneers: complete quests, share progress, and keep coming back.","id":"community-builder","premium":true,"steps":["Complete 5 quests","Earn 500 total XP","Share your progress with the community"],"title":"Community Builder","xp":150}]}
+quests count: 6
+ - welcome-pioneer: Welcome, Pioneer | 50 XP | 3 steps | premium=False
+ - daily-checkin: Daily Check-in Streak | 20 XP | 3 steps | premium=False
+ - invite-a-pioneer: Invite a Pioneer | 100 XP | 3 steps | premium=False
+ - learn-pi-payments: Learn Pi Payments (Sandbox) | 80 XP | 3 steps | premium=False
+ - premium-explorer: Premium Explorer Pack | 200 XP | 3 steps | premium=True
+ - community-builder: Community Builder | 150 XP | 3 steps | premium=True
+total max XP: 600
+$ curl -s -o /dev/null -w "GET / homepage HTTP %{http_code}\n" http://localhost:3000/
+GET / homepage HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"username\":\"demo-pioneer\"}"
+{"ok":true,"uid":"demo-pioneer-20261120","username":"demo-pioneer"}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"
+{"uid":"demo-pioneer-20261120","username":"demo-pioneer","xp":0,"premium":false,"streak":0,"checkins":[],"steps":{}}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"welcome-pioneer\",\"stepIndex\":0,\"done\":true}"
+{"ok":true,"xp":17,"steps":[true,false,false]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"welcome-pioneer\",\"stepIndex\":1,\"done\":true}"
+{"ok":true,"xp":33,"steps":[true,true,false]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"invite-a-pioneer\",\"stepIndex\":0,\"done\":true}"
+{"ok":true,"xp":66,"steps":[true,false,false]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/checkin -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\"}"
+{"ok":true,"streak":1,"xp":73}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"
+{"uid":"demo-pioneer-20261120","username":"demo-pioneer","xp":73,"premium":false,"streak":1,"checkins":["2026-11-20"],"steps":{"welcome-pioneer":[true,true,false],"invite-a-pioneer":[true,false,false],"daily-checkin":[true,false,false]}}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/leaderboard
+{"leaderboard":[{"uid":"demo-pioneer-20261120","username":"demo-pioneer","xp":73,"premium":false,"streak":1}]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"premium-explorer\",\"stepIndex\":0,\"done\":true}"
+{"error":"Premium quest — unlock the Premium Quest Pack first (Pi payment, sandbox)."}
+HTTP 403
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/auth/verify -H "Content-Type: application/json" -d "{\"accessToken\":\"dev-test-token\"}"
+{"verified":false,"reason":"PI_API_KEY is not configured. Set it server-side only (never in the frontend) to verify access tokens against the Pi Platform API (/v2/me)."}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/payments/approve -H "Content-Type: application/json" -d "{\"paymentId\":\"dev-demo-pay-20261120\",\"uid\":\"demo-pioneer-20261120\",\"amount\":1,\"memo\":\"Premium Quest Pack\"}"
+{"ok":true,"status":"approved-sandbox","sandbox":true,"note":"Sandbox simulation — no real Pi moved, no Platform API call made."}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/payments/complete -H "Content-Type: application/json" -d "{\"paymentId\":\"dev-demo-pay-20261120\",\"txid\":\"sandbox-txid-demo\",\"uid\":\"demo-pioneer-20261120\"}"
+{"ok":true,"status":"completed-sandbox","premium":true,"sandbox":true}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"premium-explorer\",\"stepIndex\":0,\"done\":true}"
+{"ok":true,"xp":140,"steps":[true,false,false]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"
+{"uid":"demo-pioneer-20261120","username":"demo-pioneer","xp":140,"premium":true,"streak":1,"checkins":["2026-11-20"],"steps":{"welcome-pioneer":[true,true,false],"invite-a-pioneer":[true,false,false],"daily-checkin":[true,false,false],"premium-explorer":[true,false,false]}}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/leaderboard
+{"leaderboard":[{"uid":"demo-pioneer-20261120","username":"demo-pioneer","xp":140,"premium":true,"streak":1}]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/payments?uid=demo-pioneer-20261120"
+{"payments":[{"paymentId":"dev-demo-pay-20261120","uid":"demo-pioneer-20261120","amount":1,"memo":"Premium Quest Pack","status":"completed-sandbox","createdAt":"2026-11-20T16:48:38.019Z","txid":"sandbox-txid-demo","completedAt":"2026-11-20T16:48:38.042Z"}]}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"not-a-quest\",\"stepIndex\":0,\"done\":true}"
+{"error":"uid and a valid questId are required"}
+HTTP 400
+
+$ curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress"
+{"error":"uid is required"}
+HTTP 400
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/checkin -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\"}"
+{"ok":true,"streak":1,"xp":140}
+HTTP 200
+
+--- duplicate check-in above: streak must stay 1, XP unchanged ---
+
+--- db.json snapshot BEFORE cleanup (test data only) ---
+{
+  "users": {
+    "demo-pioneer-20261120": {
+      "uid": "demo-pioneer-20261120",
+      "username": "demo-pioneer",
+      "xp": 140,
+      "steps": {
+        "welcome-pioneer": [
+          true,
+          true,
+          false
+        ],
+        "invite-a-pioneer": [
+          true,
+          false,
+          false
+        ],
+        "daily-checkin": [
+          true,
+          false,
+          false
+        ],
+        "premium-explorer": [
+          true,
+          false,
+          false
+        ]
+      },
+      "checkins": [
+        "2026-11-20"
+      ],
+      "premium": true,
+      "createdAt": "2026-11-20T16:48:37.739Z"
+    }
+  },
+  "payments": [
+    {
+      "paymentId": "dev-demo-pay-20261120",
+      "uid": "demo-pioneer-20261120",
+      "amount": 1,
+      "memo": "Premium Quest Pack",
+      "status": "completed-sandbox",
+      "createdAt": "2026-11-20T16:48:38.019Z",
+      "txid": "sandbox-txid-demo",
+      "completedAt": "2026-11-20T16:48:38.042Z"
+    }
+  ]
+}
+--- server stopped (PID 3465 killed) ---
+root        3456  1.3  0.0   4996  4064 ?        S    16:48   0:00 /bin/bash --norc --noprofile -c umask 0007; cd ~/workspace/hackathons/pinext-quest-tracker && rm -f data/db.json && mkdir -p docs && LOG=docs/demo-run-2026-11-20.log { echo "=== PI NEXT ??? Quest Tracker demo run ===" echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC') / $(TZ=Asia/Jakarta date '+%Y-%m-%d %H:%M:%S WIB')" echo "Node: $(node --version) | PORT=3000 | PI_SANDBOX=true (default) | PI_API_KEY unset" echo "Repo: ~/workspace/hackathons/pinext-quest-tracker" echo "Test user: demo-pioneer-20261120 / demo-pioneer (test data only, deleted after run)" echo "" echo "--- 0. Start server (node server.js, stdlib only, no npm install) ---" } | tee "$LOG" node server.js > /tmp/pinext-server.log 2>&1 & SRV=$! sleep 2 echo "server PID $SRV" | tee -a "$LOG"; cat /tmp/pinext-server.log | tee -a "$LOG" run() { echo "" | tee -a "$LOG"; echo "--- $1 ---" | tee -a "$LOG"; shift; "$@" 2>&1 | tee -a "$LOG"; } # helper curl that prints status + body t() { echo "\$ $*" | tee -a "$LOG"; eval "$*" | tee -a "$LOG"; echo "" | tee -a "$LOG"; } t 'curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/health' t 'curl -s http://localhost:3000/api/quests | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"quests={len(d[chr(39)+chr(39) if False else chr(113)+chr(117)+chr(101)+chr(115)+chr(116)+chr(115)]})\" )" 2>&1 || curl -s http://localhost:3000/api/quests' # simpler quests count via python file curl -s http://localhost:3000/api/quests > /tmp/quests.json python3 -c "import json; d=json.load(open('/tmp/quests.json')); print('quests count:', len(d['quests'])); [print(f\" - {q['id']}: {q['title']} | {q['xp']} XP | {len(q['steps'])} steps | premium={q['premium']}\") for q in d['quests']]; print('total max XP:', sum(q['xp'] for q in d['quests']))" | tee -a "$LOG" t 'curl -s -o /dev/null -w "GET / homepage HTTP %{http_code}\n" http://localhost:3000/' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"username\":\"demo-pioneer\"}"' t 'curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"welcome-pioneer\",\"stepIndex\":0,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"welcome-pioneer\",\"stepIndex\":1,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"invite-a-pioneer\",\"stepIndex\":0,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/checkin -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\"}"' t 'curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"' t 'curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/leaderboard' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"premium-explorer\",\"stepIndex\":0,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/auth/verify -H "Content-Type: application/json" -d "{\"accessToken\":\"dev-test-token\"}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/payments/approve -H "Content-Type: application/json" -d "{\"paymentId\":\"dev-demo-pay-20261120\",\"uid\":\"demo-pioneer-20261120\",\"amount\":1,\"memo\":\"Premium Quest Pack\"}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/payments/complete -H "Content-Type: application/json" -d "{\"paymentId\":\"dev-demo-pay-20261120\",\"txid\":\"sandbox-txid-demo\",\"uid\":\"demo-pioneer-20261120\"}"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"premium-explorer\",\"stepIndex\":0,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress?uid=demo-pioneer-20261120"' t 'curl -s -w "\nHTTP %{http_code}\n" http://localhost:3000/api/leaderboard' t 'curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/payments?uid=demo-pioneer-20261120"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/progress -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\",\"questId\":\"not-a-quest\",\"stepIndex\":0,\"done\":true}"' t 'curl -s -w "\nHTTP %{http_code}\n" "http://localhost:3000/api/progress"' t 'curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:3000/api/checkin -H "Content-Type: application/json" -d "{\"uid\":\"demo-pioneer-20261120\"}"' echo "--- duplicate check-in above: streak must stay 1, XP unchanged ---" | tee -a "$LOG" echo "" | tee -a "$LOG" echo "--- db.json snapshot BEFORE cleanup (test data only) ---" | tee -a "$LOG" cat data/db.json | tee -a "$LOG" kill $SRV 2>/dev/null; sleep 1 echo "" | tee -a "$LOG"; echo "--- server stopped (PID $SRV killed) ---" | tee -a "$LOG" ps aux | grep "[n]ode server.js" | tee -a "$LOG" || true echo "--- cleanup: rm data/db.json ---" | tee -a "$LOG" rm -f data/db.json; ls -l data/ | tee -a "$LOG" echo "END OF DEMO RUN" | tee -a "$LOG" wc -l "$LOG"; ls -lh "$LOG"
+--- cleanup: rm data/db.json ---
+total 4
+-rw-rw---- 1 root nogroup 1853 Nov 20 15:57 quests.json
+END OF DEMO RUN
+
+=== TEST SUMMARY (appended after run) ===
+Run: 2026-11-20 23:48 WIB / 16:48 UTC, Node v24.22.1, PORT 3000, PI_SANDBOX=true, PI_API_KEY unset.
+No npm install (stdlib only). Server started, tested, killed; port 3000 confirmed free afterwards.
+Test data (uid demo-pioneer-20261120, payment dev-demo-pay-20261120) deleted: data/db.json removed after run.
+
+#  | Check                                        | Expected                         | Got                              | Result
+---|----------------------------------------------|----------------------------------|----------------------------------|-------
+1  | GET /api/health                              | 200, ok:true, 6 quests           | ok:true, quests:6, users:0, payments:0, piSandbox:true, piApiKeyConfigured:false | PASS
+2  | GET /api/quests                              | 200, 6 quests, max 600 XP        | 6 quests (50+20+100+80+200+150 = 600 XP max) | PASS
+3  | GET / (homepage)                             | 200                              | HTTP 200                         | PASS
+4  | POST /api/auth/register                      | 200, uid+username stored         | ok:true, demo-pioneer            | PASS
+5  | GET /api/progress (new user)                 | 200, xp 0, streak 0              | xp:0, premium:false, streak:0    | PASS
+6  | POST /api/progress welcome step 0            | 200, xp 17 (50/3 rounded)        | xp:17, steps [true,false,false]  | PASS
+7  | POST /api/progress welcome step 1            | 200, xp 33                       | xp:33                            | PASS
+8  | POST /api/progress invite step 0             | 200, xp 66 (+33)                 | xp:66                            | PASS
+9  | POST /api/checkin                            | 200, streak 1, xp 73 (+7)        | streak:1, xp:73                  | PASS
+10 | GET /api/progress (mid-run)                  | xp 73, checkins [2026-11-20]     | xp:73, streak:1, premium:false   | PASS
+11 | GET /api/leaderboard                         | 200, 1 row, 73 XP                | demo-pioneer, 73 XP, streak 1    | PASS
+12 | POST /api/progress premium BEFORE payment    | 403 premium gate                 | HTTP 403 "unlock the Premium Quest Pack first" | PASS
+13 | POST /api/auth/verify (no PI_API_KEY)        | 200, verified:false, honest msg  | verified:false, reason explains PI_API_KEY missing | PASS
+14 | POST /api/payments/approve (1 Pi)            | 200, approved-sandbox            | approved-sandbox, "no real Pi moved" | PASS
+15 | POST /api/payments/complete                  | 200, completed-sandbox, premium  | completed-sandbox, premium:true  | PASS
+16 | POST /api/progress premium AFTER payment     | 200, xp 140 (+67 = 200/3)        | xp:140, steps [true,false,false] | PASS
+17 | GET /api/progress (final)                    | xp 140, premium true, streak 1   | xp:140, premium:true, streak:1   | PASS
+18 | GET /api/leaderboard (final)                 | 1 row, 140 XP, premium badge     | demo-pioneer, 140 XP, premium:true | PASS
+19 | GET /api/payments?uid=                       | 1 record, completed-sandbox      | 1 record, amount 1, completed-sandbox | PASS
+20 | Negative: invalid questId / missing uid      | 400 both                         | HTTP 400 both                    | PASS
+21 | Duplicate check-in same day                 | streak stays 1, XP stays 140     | streak:1, xp:140                 | PASS
+
+TOTAL: 21/21 PASS, 0 FAIL.
+XP walk: 0 -> 17 -> 33 -> 66 -> 73 (check-in) -> 140 (after 1 Pi sandbox premium + 1 premium step).
+Note on log noise (not app failures): one curl/python one-liner in the test harness had a
+quoting typo (SyntaxError in the harness, not the app) and its fallback printed the full
+quests JSON correctly; the `ps aux` line shows the harness shell itself, not a lingering
+server — the server process was killed and http://localhost:3000 no longer responds.
