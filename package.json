@@ -1,0 +1,1 @@
+{"dependencies":{},"description":"Quest Tracker for the Pi community — a Pi App for Pi Next (Pi Network hackathon). Pi Authentication + Pi payments (sandbox) via the official Pi SDK.","engines":{"node":">=18"},"license":"MIT","name":"pinext-quest-tracker","scripts":{"dev":"node server.js","start":"node server.js"},"version":"0.1.0"}
