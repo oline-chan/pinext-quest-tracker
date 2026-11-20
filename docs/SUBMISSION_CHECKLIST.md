@@ -16,10 +16,21 @@ Only one team member submits each app.
 - [x] Privacy policy — `public/privacy.html`
 - [x] Pi Authentication integrated (`Pi.authenticate`)
 - [x] Pi payments integrated (`Pi.createPayment`, server approve/complete)
-- [ ] App registered in the Developer Web Console (needs Gondal's Pi account)
+- [x] App registered in the Developer Web Console — **Quest Tracker**,
+      App ID `6b00ae2dd54a71cf5a29533f`, Staging (Testnet), status Draft
+      (created 2026-11-21 03:32 WIB, account `@olineManuelL`).
+      Registration for Pi Next itself also done 2026-11-21 03:30 WIB.
+- [ ] Deploy to a public HTTPS URL — guide ready: `docs/DEPLOY.md`
+      (recommended: Render free, no card; `render.yaml` in repo).
+      Then do **Deploy to Staging (Testnet)** in the Web Console with
+      that URL, and upload the icon `public/icon-1024.png` (1024×1024).
 - [ ] Development URL configured, sandbox tested in Pi Browser
 - [ ] Production URL configured, `sandbox: false` for the submitted build
-- [ ] `PI_API_KEY` set server-side (never in the frontend or git)
+      (one env var: `PI_SANDBOX=false` on the host — the frontend reads
+      it from `/api/health`, no code edit needed)
+- [ ] `PI_API_KEY` set server-side (never in the frontend or git) —
+      safe generate/use guide: `docs/PI_API_KEY.md`. Key NOT generated
+      yet; it is shown once and must go through the Secure Vault.
 - [ ] Demo video ≤3 minutes, public on YouTube / video platform, link in the form
 - [ ] Team members listed in the submission form (all must register for Pi Next)
 - [ ] Midpoint submission (optional, for feedback/visibility)
