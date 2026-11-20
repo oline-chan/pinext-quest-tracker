@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Tracker — Pi Community Quests</title>
+<meta name="description" content="Quest Tracker is a community quest app for Pioneers: track daily quests, build streaks, and unlock premium quests with Pi payments.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<!-- Official Pi SDK. Loaded only in Pi Browser / sandbox; if it is missing,
+     the app explains that and offers a clearly labelled local Dev Mode. -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="/logo.svg" alt="Quest Tracker logo" class="logo">
+    <div>
+      <h1>Quest Tracker</h1>
+      <p class="tagline">Community quests for Pioneers</p>
+    </div>
+  </div>
+  <div class="profile" id="profile">
+    <span id="profile-name">Not signed in</span>
+    <button id="btn-auth" class="btn primary">Sign in with Pi</button>
+    <button id="btn-dev" class="btn ghost" title="Local testing only — not a Pi sign-in">Dev Mode</button>
+  </div>
+</header>
+
+<main>
+  <section class="notice" id="pi-notice" hidden>
+    <strong>Pi Browser required for real Pi sign-in.</strong>
+    <span id="pi-notice-text">This app is designed to run inside Pi Browser, where the Pi SDK is available. You are in a regular browser, so Pi Authentication and Pi payments are unavailable here. Use Dev Mode to preview the quest UI locally — it is not a Pi account.</span>
+  </section>
+
+  <section class="stats" id="stats">
+    <div class="stat"><span class="stat-num" id="stat-xp">0</span><span class="stat-label">XP</span></div>
+    <div class="stat"><span class="stat-num" id="stat-streak">0</span><span class="stat-label">Day streak</span></div>
+    <div class="stat"><span class="stat-num" id="stat-done">0 / 0</span><span class="stat-label">Quests done</span></div>
+    <div class="stat"><span class="stat-num" id="stat-premium">Free</span><span class="stat-label">Plan</span></div>
+  </section>
+
+  <section class="actions">
+    <button id="btn-checkin" class="btn primary">Daily check-in</button>
+    <button id="btn-premium" class="btn gold">Unlock Premium Quest Pack — 1 Pi (Sandbox)</button>
+    <button id="btn-share" class="btn">Share with a Pioneer</button>
+  </section>
+
+  <section>
+    <h2>Quests</h2>
+    <p class="hint">Tap a quest step to check it off. Progress is saved on the server under your Pioneer ID.</p>
+    <div id="quest-list" class="quest-list"><p>Loading quests…</p></div>
+  </section>
+
+  <section>
+    <h2>Leaderboard</h2>
+    <ol id="leaderboard" class="leaderboard"><li>Loading…</li></ol>
+  </section>
+
+  <section>
+    <h2>Payments</h2>
+    <p class="hint">Payments run through the official Pi SDK in sandbox mode during development — no real Pi moves. Server approval and completion are recorded in <code>/api/payments</code>.</p>
+    <ul id="payment-list" class="payment-list"><li>No payments yet.</li></ul>
+  </section>
+</main>
+
+<footer>
+  <p>Quest Tracker — built for Pi Next. <a href="/privacy.html">Privacy Policy</a> · <a href="https://minepi.com/pi-next/" target="_blank" rel="noopener">Pi Next</a></p>
+  <p class="fineprint">Pi is a trademark of Pi Network. This app is an independent hackathon entry and is not affiliated with or endorsed by Pi Network.</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
