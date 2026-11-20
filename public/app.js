@@ -45,8 +45,15 @@ async function initPi() {
     $("btn-premium").textContent = "Unlock Premium — 1 Pi (needs Pi Browser)";
     return;
   }
-  // Sandbox: true in development, false in production.
-  window.Pi.init({ version: "2.0", sandbox: true });
+  // Sandbox flag comes from the server (/api/health -> piSandbox, driven
+  // by the PI_SANDBOX env var), so staging and production never need a
+  // frontend edit. Falls back to sandbox:true if the health check fails.
+  let sandbox = true;
+  try {
+    const health = await api.get("/api/health");
+    if (typeof health.piSandbox === "boolean") sandbox = health.piSandbox;
+  } catch { /* keep sandbox:true */ }
+  window.Pi.init({ version: "2.0", sandbox });
 }
 
 async function signInWithPi() {
