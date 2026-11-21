@@ -1,10 +1,8 @@
 # Preview images
 
-These three images are **rendered mockups** of the app interface, made so the
-repo has preview assets now. Before submission, replace them with **real
-screenshots of the app running in Pi Browser** (quests list, profile,
-payment sheet).
+Real screenshots of the app running in Pi Browser on 21 Nov 2026
+(extracted from gondalL's screen recordings), replacing the earlier mockups:
 
-- `01-quests.png` — quest list
-- `02-profile.png` — Pioneer profile / stats
-- `03-payment.png` — Pi payment (sandbox)
+- `01-quests.png` — quest list (Welcome Pioneer 3/3, Daily Check-in Streak 3/3)
+- `02-profile.png` — leaderboard, #1 olineManuelL, 250 XP, 1-day streak
+- `03-payment.png` — Pi payment sheet, 1.0 Test-Pi, Premium Quest Pack
