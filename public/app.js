@@ -28,13 +28,26 @@ let quests = [];
 const $ = (id) => document.getElementById(id);
 const hasPiSdk = () => typeof window.Pi !== "undefined";
 
-function onIncompletePaymentFound(payment) {
-  // Per Pi docs, the SDK reports an unfinished payment here. Hand it to the
-  // server to complete it, so the user is not stuck.
+async function onIncompletePaymentFound(payment) {
+  // Per Pi docs, the SDK reports an unfinished payment here: a payment that
+  // reached the blockchain but was never completed server-side. It must be
+  // resolved before a new payment can start, otherwise the Premium button
+  // looks dead (taps do nothing). Resolve it properly: approve FIRST, then
+  // complete — the old code only tried complete, which Pi rejects for a
+  // never-approved payment. The payment DTO carries user_uid, because
+  // currentUser is not set yet while authenticate() is still running.
   console.warn("Incomplete Pi payment found:", payment);
-  if (payment && payment.identifier) {
-    api.post("/api/payments/complete", { paymentId: payment.identifier, txid: payment.transaction && payment.transaction.txid, uid: currentUser && currentUser.uid });
-  }
+  if (!payment || !payment.identifier) return;
+  const uid = payment.user_uid || (currentUser && currentUser.uid);
+  const txid = payment.transaction && payment.transaction.txid;
+  try {
+    const a = await api.post("/api/payments/approve", { paymentId: payment.identifier, uid, amount: 1, memo: payment.memo || "Premium Quest Pack" });
+    if (!a.ok) { console.warn("Incomplete payment approval failed:", a); return; }
+    if (!txid) { console.warn("Incomplete payment has no transaction yet; a new payment should cancel it."); return; }
+    const c = await api.post("/api/payments/complete", { paymentId: payment.identifier, txid, uid });
+    if (c.ok) await refreshAll();
+    else console.warn("Incomplete payment completion failed:", c);
+  } catch (e) { console.warn("Incomplete payment handling failed:", e); }
 }
 
 async function initPi() {
@@ -206,19 +219,25 @@ async function unlockPremium() {
     return;
   }
   // Real Pi SDK payment flow (sandbox: true was set in Pi.init).
-  window.Pi.createPayment(
-    { amount: 1, memo: "Premium Quest Pack", metadata: { product: "premium-quest-pack" } },
-    {
-      onReadyForServerApproval: (paymentId) => {
-        api.post("/api/payments/approve", { paymentId, uid: currentUser.uid, amount: 1, memo: "Premium Quest Pack" });
-      },
-      onReadyForServerCompletion: (paymentId, txid) => {
-        api.post("/api/payments/complete", { paymentId, txid, uid: currentUser.uid }).then(() => refreshAll());
-      },
-      onCancel: (paymentId) => { alert("Payment cancelled."); },
-      onError: (error, payment) => { alert("Payment error: " + (error && error.message || error)); },
-    }
-  );
+  // Wrapped in try/catch: if createPayment throws synchronously the button
+  // used to die silently with no feedback at all.
+  try {
+    window.Pi.createPayment(
+      { amount: 1, memo: "Premium Quest Pack", metadata: { product: "premium-quest-pack" } },
+      {
+        onReadyForServerApproval: (paymentId) => {
+          api.post("/api/payments/approve", { paymentId, uid: currentUser.uid, amount: 1, memo: "Premium Quest Pack" });
+        },
+        onReadyForServerCompletion: (paymentId, txid) => {
+          api.post("/api/payments/complete", { paymentId, txid, uid: currentUser.uid }).then(() => refreshAll());
+        },
+        onCancel: (paymentId) => { alert("Payment cancelled."); },
+        onError: (error, payment) => { alert("Payment error: " + (error && error.message || error)); },
+      }
+    );
+  } catch (e) {
+    alert("Could not start the Pi payment: " + (e && e.message || e));
+  }
 }
 
 function shareWithPioneer() {
