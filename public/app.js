@@ -67,6 +67,19 @@ async function initPi() {
     if (typeof health.piSandbox === "boolean") sandbox = health.piSandbox;
   } catch { /* keep sandbox:true */ }
   window.Pi.init({ version: "2.0", sandbox });
+  // A session restored from storage (loadSession) has no live SDK auth in
+  // this page: the access token is deliberately not stored. Without a fresh
+  // authenticate() the SDK has no "payments" scope and createPayment throws
+  // "Cannot create a payment without 'payments' scope". Re-authenticate
+  // silently when a Pi session was restored (no prompt if already granted).
+  if (currentUser && currentUser.via === "pi") {
+    try {
+      const auth = await window.Pi.authenticate(["username", "payments"], onIncompletePaymentFound);
+      currentUser = { uid: auth.user.uid, username: auth.user.username, via: "pi", accessToken: auth.accessToken };
+      saveSession();
+      renderProfile();
+    } catch (e) { console.warn("Pi session refresh failed; sign in again:", e); }
+  }
 }
 
 async function signInWithPi() {
@@ -216,6 +229,22 @@ async function dailyCheckin() {
   await refreshAll();
 }
 
+function startPiPayment() {
+  window.Pi.createPayment(
+    { amount: 1, memo: "Premium Quest Pack", metadata: { product: "premium-quest-pack" } },
+    {
+      onReadyForServerApproval: (paymentId) => {
+        api.post("/api/payments/approve", { paymentId, uid: currentUser.uid, amount: 1, memo: "Premium Quest Pack" });
+      },
+      onReadyForServerCompletion: (paymentId, txid) => {
+        api.post("/api/payments/complete", { paymentId, txid, uid: currentUser.uid }).then(() => refreshAll());
+      },
+      onCancel: (paymentId) => { alert("Payment cancelled."); },
+      onError: (error, payment) => { alert("Payment error: " + (error && error.message || error)); },
+    }
+  );
+}
+
 async function unlockPremium() {
   if (!currentUser) { alert("Sign in first."); return; }
   if (!hasPiSdk()) {
@@ -232,23 +261,26 @@ async function unlockPremium() {
   }
   // Real Pi SDK payment flow (sandbox: true was set in Pi.init).
   // Wrapped in try/catch: if createPayment throws synchronously the button
-  // used to die silently with no feedback at all.
+  // used to die silently with no feedback at all. A "payments scope" error
+  // means this page session was restored from storage without a live SDK
+  // auth — re-authenticate once and retry.
   try {
-    window.Pi.createPayment(
-      { amount: 1, memo: "Premium Quest Pack", metadata: { product: "premium-quest-pack" } },
-      {
-        onReadyForServerApproval: (paymentId) => {
-          api.post("/api/payments/approve", { paymentId, uid: currentUser.uid, amount: 1, memo: "Premium Quest Pack" });
-        },
-        onReadyForServerCompletion: (paymentId, txid) => {
-          api.post("/api/payments/complete", { paymentId, txid, uid: currentUser.uid }).then(() => refreshAll());
-        },
-        onCancel: (paymentId) => { alert("Payment cancelled."); },
-        onError: (error, payment) => { alert("Payment error: " + (error && error.message || error)); },
-      }
-    );
+    startPiPayment();
   } catch (e) {
-    alert("Could not start the Pi payment: " + (e && e.message || e));
+    const msg = (e && e.message) || String(e);
+    if (/scope/i.test(msg)) {
+      try {
+        const auth = await window.Pi.authenticate(["username", "payments"], onIncompletePaymentFound);
+        currentUser = { uid: auth.user.uid, username: auth.user.username, via: "pi", accessToken: auth.accessToken };
+        saveSession();
+        renderProfile();
+        startPiPayment();
+      } catch (e2) {
+        alert("Could not start the Pi payment: " + (e2 && e2.message || e2));
+      }
+      return;
+    }
+    alert("Could not start the Pi payment: " + msg);
   }
 }
 
