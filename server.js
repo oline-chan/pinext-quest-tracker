@@ -132,6 +132,7 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".json": "application/json",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 function sendJson(res, status, obj) {
