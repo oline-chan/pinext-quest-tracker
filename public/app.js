@@ -105,7 +105,19 @@ function renderProfile() {
   $("profile-name").textContent = currentUser
     ? `${currentUser.username}${currentUser.via === "dev" ? " (Dev Mode — not a Pi account)" : " (Pi)"}`
     : "Not signed in";
-  $("btn-auth").disabled = Boolean(currentUser) || !hasPiSdk();
+  // Sign in with Pi stays enabled while in Dev Mode, so a user who tapped
+  // Dev Mode by accident can switch back to their Pi account. It is only
+  // disabled once actually signed in with Pi (or when there is no Pi SDK).
+  $("btn-auth").disabled = Boolean(currentUser && currentUser.via === "pi") || !hasPiSdk();
+  $("btn-dev").disabled = Boolean(currentUser && currentUser.via === "dev");
+  $("btn-signout").hidden = !currentUser;
+}
+
+function signOut() {
+  currentUser = null;
+  try { localStorage.removeItem("qt-user"); } catch { /* ignore */ }
+  renderProfile();
+  refreshAll();
 }
 
 async function refreshAll() {
@@ -252,6 +264,7 @@ function shareWithPioneer() {
 
 $("btn-auth").addEventListener("click", signInWithPi);
 $("btn-dev").addEventListener("click", signInDev);
+$("btn-signout").addEventListener("click", signOut);
 $("btn-checkin").addEventListener("click", dailyCheckin);
 $("btn-premium").addEventListener("click", unlockPremium);
 $("btn-share").addEventListener("click", shareWithPioneer);
